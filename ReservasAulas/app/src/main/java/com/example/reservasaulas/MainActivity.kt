@@ -2,6 +2,7 @@
 
 package com.example.reservasaulas
 
+import android.app.TimePickerDialog
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -19,10 +20,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.rounded.Book
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -49,9 +52,11 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -320,7 +325,7 @@ fun MenuPrincipalScreen(navController: NavController, onLogout: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Reserva de salas",
+                        text = "Reserva de Salas",
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
@@ -379,6 +384,10 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
     var aula by remember { mutableStateOf("") }
     var fecha by remember { mutableStateOf("") }
     var horario by remember { mutableStateOf("") }
+    var errorAula by remember { mutableStateOf(false) }
+    var errorHorario by remember { mutableStateOf(false) }
+    var errorFecha by remember { mutableStateOf(false) }
+    var timePickerDialogVisible by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -387,23 +396,14 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
     ) {
         // Barra superior
         TopAppBar(
-            title = { Text("Reservas de Salas") },
+            title = { Text("Reserva de Salas") },
             actions = {
-                Row {
-                    TextButton(onClick = { navController.navigate("menu") }) {
-                        Text("Menú Principal")
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    TextButton(onClick = onLogout) {
-                        Text("Cerrar Sesión")
-                    }
+                TextButton(onClick = { navController.navigate("menu") }) {
+                    Text("Menú Principal")
                 }
             }
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Botones de navegación
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -427,6 +427,10 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
             }
         }
 
+
+
+
+
         Spacer(modifier = Modifier.height(16.dp))
 
         // Formulario de ingreso de reservas
@@ -434,8 +438,6 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(8.dp)
         ) {
-            var errorFecha by remember { mutableStateOf(false) }
-
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -443,12 +445,31 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text("Registrar Nueva Reserva", style = MaterialTheme.typography.headlineSmall)
+
+
+            //Campo de Aula
                 OutlinedTextField(
                     value = aula,
-                    onValueChange = { aula = it },
-                    label = { Text("Sala") },
-                    modifier = Modifier.fillMaxWidth()
+                    onValueChange = {
+                        aula = it
+                        errorAula = !validarNumeroAula(it)
+                    },
+                    label = { Text("Sala (1-10)") },
+                    isError = errorAula,
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    placeholder = { Text("Ej: 5") }
                 )
+
+                if (errorAula) {
+                    Text(
+                        text = "El número de sala debe estar entre 1 y 10.",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                // Campo Fecha
                 OutlinedTextField(
                     value = fecha,
                     onValueChange = {
@@ -458,7 +479,7 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
                     label = { Text("Fecha (dd/mm/aaaa)") },
                     isError = errorFecha,
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("dd/mm/aaaa") },
+                    placeholder = { Text("dd/mm/aaaa") }
                 )
                 if (errorFecha) {
                     Text(
@@ -467,23 +488,46 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
+
+                // Campo Horario
                 OutlinedTextField(
                     value = horario,
-                    onValueChange = { horario = it },
-                    label = { Text("Horario") },
-                    modifier = Modifier.fillMaxWidth()
+                    onValueChange = {
+                        horario = it
+                        errorHorario = !validarFormatoHora(it)
+                    },
+                    label = { Text("Horario (hh:mm)") },
+                    isError = errorHorario,
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("hh:mm") },
+                    trailingIcon = {
+                        IconButton(onClick = { timePickerDialogVisible = true }) {
+                            Icon(Icons.Default.Schedule, contentDescription = "Seleccionar Hora")
+                        }
+                    }
                 )
+                if (errorHorario) {
+                    Text(
+                        "Formato de horario inválido. Debe ser hh:mm.",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
+
+                // Botón Registrar
                 Button(
                     onClick = {
-                        if (aula.isNotEmpty() && fecha.isNotEmpty() && horario.isNotEmpty() && !errorFecha) {
+                        if (!errorAula && !errorFecha && !errorHorario) {
                             reservas.add(Reserva(aula, fecha, horario))
                             aula = ""
                             fecha = ""
                             horario = ""
                         }
                     },
-                    enabled = aula.isNotEmpty() && fecha.isNotEmpty() && horario.isNotEmpty() && !errorFecha, // Botón habilitado solo si todo es válido
+                    enabled = aula.isNotEmpty() && fecha.isNotEmpty() && horario.isNotEmpty() &&
+                            !errorAula && !errorFecha && !errorHorario,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -491,14 +535,45 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
                 }
             }
         }
+    }
 
+    // TimePickerDialog
+    if (timePickerDialogVisible) {
+        val context = LocalContext.current
+        val timePickerDialog = remember {
+            TimePickerDialog(
+                context,
+                { _, hourOfDay, minute ->
+                    horario = "%02d:%02d".format(hourOfDay, minute)
+                    timePickerDialogVisible = false
+                },
+                12, 0, true
+            )
+        }
+        timePickerDialog.show()
     }
 }
-// Función para validar la fecha
+
+// Validar número de aula
+fun validarNumeroAula(aula: String): Boolean {
+    val numero = aula.toIntOrNull()
+    return numero != null && numero in 1..10
+}
+
+// Validar formato de hora
+fun validarFormatoHora(hora: String): Boolean {
+    val regex = Regex("^([01]\\d|2[0-3]):([0-5]\\d)$")
+    return regex.matches(hora)
+}
+
+// Validar formato de fecha
 fun validarFormatoFecha(fecha: String): Boolean {
     val regex = Regex("^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/(\\d{4})$")
     return regex.matches(fecha)
 }
+
+
+
 
 @Composable
 fun ListarReservasScreen(navController: NavController, reservas: List<Reserva>) {
@@ -550,14 +625,16 @@ fun CancelarReservasScreen(navController: NavController, reservas: MutableList<R
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(reservas) { reserva ->
-                    Row(
+                    Card(
                         modifier = Modifier.fillMaxWidth().padding(8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        elevation = CardDefaults.cardElevation(8.dp)
                     ) {
                         Column {
+                            Column(modifier = Modifier.padding(16.dp)) {
                             Text("Aula: ${reserva.aula}")
                             Text("Fecha: ${reserva.fecha}")
                             Text("Horario: ${reserva.horario}")
+                        }
                         }
                         Button(
                             onClick = { reservas.remove(reserva) },
