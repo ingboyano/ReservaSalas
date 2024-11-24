@@ -45,10 +45,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -82,42 +88,71 @@ class MainActivity : ComponentActivity() {
 // MainApp with Navigation
 @Composable
 fun MainApp() {
+
+    val customRed = Color(0xFF791414) // Código hexadecimal para rojo
     val navController = rememberNavController()
     var loggedIn by remember { mutableStateOf(false) }
     val reservas = remember { mutableStateListOf<Reserva>() }
     val libros = remember { mutableStateListOf<Libro>() }
 
-    if (loggedIn) {
-        NavHost(navController = navController, startDestination = "menu") {
-            composable("menu") {
-                MenuPrincipalScreen(navController, onLogout = { loggedIn = false })
-            }
-            composable("reservas") {
-                ReservaScreen(navController, reservas, onLogout = { loggedIn = false })
-            }
-            composable("listarReservas") {
-                ListarReservasScreen(navController, reservas)
-            }
-            composable("cancelarReservas") {
-                CancelarReservasScreen(navController, reservas)
-            }
-            composable("libros") {
-                LibrosScreen(navController, libros)
-            }
-            composable("listarLibros") {
-                ListarLibrosScreen(navController, libros)
-            }
-            composable("cancelarLibros") {
-                CancelarLibrosScreen(navController, libros)
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Imagen de fondo
+        Image(
+            painter = painterResource(id = R.drawable.arbol),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(0.5f) // Transparencia
+        )
+
+        // Si no está logueado, mostramos el LoginScreen con imagen sobre el fondo
+        if (!loggedIn) {
+            // Imagen sobre el fondo en el login
+            Image(
+                painter = painterResource(id = R.drawable.logouaa), // Cambié "logo" por "logouaa"
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.TopCenter) // Posiciona la imagen en la parte superior
+                    .padding(top = 64.dp) // Ajuste el padding superior si es necesario
+            )
+
+            // Pantalla de Login
+            LoginScreen { loggedIn = true }
+        } else {
+            // Si está logueado, navegamos a la siguiente pantalla
+            NavHost(navController = navController, startDestination = "menu") {
+                composable("menu") {
+                    MenuPrincipalScreen(navController, onLogout = { loggedIn = false })
+                }
+                composable("reservas") {
+                    ReservaScreen(navController, reservas, onLogout = { loggedIn = false })
+                }
+                composable("listarReservas") {
+                    ListarReservasScreen(navController, reservas)
+                }
+                composable("cancelarReservas") {
+                    CancelarReservasScreen(navController, reservas)
+                }
+                composable("libros") {
+                    LibrosScreen(navController, libros)
+                }
+                composable("listarLibros") {
+                    ListarLibrosScreen(navController, libros)
+                }
+                composable("cancelarLibros") {
+                    CancelarLibrosScreen(navController, libros)
+                }
             }
         }
-    } else {
-        LoginScreen { loggedIn = true }
     }
 }
 
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit) {
+
+    val customRed = Color(0xFF791414) // Código hexadecimal para rojo
+
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") } // Para mostrar mensajes de error
@@ -145,9 +180,14 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                 // Título
                 Text(
                     text = "Inicio de Sesión", //INICIO SESION
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontSize = 32.sp, // Ajusta el tamaño de la fuente
+                        fontWeight = FontWeight.Bold // Pone el texto en negrita
+                    ),
+                    color = customRed,
+                    modifier = Modifier
+                        .padding(bottom = 16.dp)
+                        .padding(top = 16.dp)
                 )
 
                 // Campo de Usuario
@@ -164,7 +204,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                             contentDescription = "Usuario"
                         )
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 // Campo de Contraseña
@@ -207,9 +247,13 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF791414),
+                        contentColor = Color.White),
                     shape = MaterialTheme.shapes.medium
-                ) {
+                )
+
+                {
                     Text(
                         text = "Iniciar Sesión",
                         color = MaterialTheme.colorScheme.onPrimary,
@@ -226,93 +270,104 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
 // Menu Principal
 @Composable
 fun MenuPrincipalScreen(navController: NavController, onLogout: () -> Unit) {
-    Column(
+
+    val customRed = Color(0xFF791414) // Código hexadecimal para rojo
+
+
+    Box(
         modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.secondary,
-                        MaterialTheme.colorScheme.background
-                    )
-                )
-            )
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .fillMaxSize(), // Ocupa toda la pantalla
+        contentAlignment = Alignment.Center // Centra el contenido
     ) {
-        // Título
-        Text(
-            text = "¡Bienvenido a BiblioUAA!",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
-
-        // Botón Gestión de Reservas
-        Button(
-            onClick = { navController.navigate("reservas") },
+        // Contenedor principal
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-                .height(60.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-            shape = MaterialTheme.shapes.medium
+                .width(350.dp) // Establece un ancho específico
+                .height(500.dp) // Establece una altura específica
+                .background(
+                    color = Color.White, // Fondo blanco
+                    shape = MaterialTheme.shapes.medium // Esquinas redondeadas
+                )
+                .padding(16.dp), // Espaciado interno
+            verticalArrangement = Arrangement.Center, // Contenido centrado verticalmente
+            horizontalAlignment = Alignment.CenterHorizontally // Contenido centrado horizontalmente
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Icono Reservas",
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Reserva de salas",
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            }
-        }
-
-        // Botón Gestión de Libros
-        Button(
-            onClick = { navController.navigate("libros") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-                .height(60.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Rounded.Book,
-                    contentDescription = "Icono Libros",
-                    tint = MaterialTheme.colorScheme.onSecondary
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Gestiona tus Libros",
-                    color = MaterialTheme.colorScheme.onSecondary
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Botón Cerrar Sesión
-        Button(
-            onClick = { onLogout() },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-                .height(50.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-            shape = MaterialTheme.shapes.medium
-        ) {
+            // Título
             Text(
-                text = "Cerrar Sesión",
-                color = MaterialTheme.colorScheme.onError
+                text = "¡Bienvenido a BiblioUAA!",
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold), // Negrita
+                color = customRed,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(bottom = 100.dp)
             )
+
+            // Botón Gestión de Reservas
+            Button(
+                onClick = { navController.navigate("reservas") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .height(60.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Icono Reservas",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Reserva de salas",
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+
+            // Botón Gestión de Libros
+            Button(
+                onClick = { navController.navigate("libros") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .height(60.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Rounded.Book,
+                        contentDescription = "Icono Libros",
+                        tint = MaterialTheme.colorScheme.onSecondary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Gestiona tus Libros",
+                        color = MaterialTheme.colorScheme.onSecondary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Botón Cerrar Sesión
+            Button(
+                onClick = { onLogout() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .padding(top = 50.dp)
+                    .height(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text(
+                    text = "Cerrar Sesión",
+                    color = MaterialTheme.colorScheme.onError
+                )
+            }
         }
     }
 }
