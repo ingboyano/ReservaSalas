@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
@@ -31,13 +32,17 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuBoxScope
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -49,12 +54,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -94,7 +97,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainApp() {
 
-    val customRed = Color(0xFF791414) // Código hexadecimal para rojo
     val navController = rememberNavController()
     var loggedIn by remember { mutableStateOf(false) }
     val reservas = remember { mutableStateListOf<Reserva>() }
@@ -202,7 +204,9 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                         username = it
                         errorMessage = "" // Limpia el mensaje de error al escribir
                     },
-                    label = { Text("Usuario") },
+                    label = {
+                        Text("Usuario", color = if (errorMessage.isNotEmpty()) customRed else MaterialTheme.colorScheme.onBackground)
+                    },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Person,
@@ -210,16 +214,35 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                         )
                     },
                     modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Introduce tu usuario", color = MaterialTheme.colorScheme.onSurface) }, // Texto dentro del campo en color negro
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = customRed, // Borde rojo cuando está enfocado
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
+                        focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
+                        errorBorderColor = MaterialTheme.colorScheme.error, // Bordes de error
+                        errorLabelColor = MaterialTheme.colorScheme.error // Texto de error
+                    )
                 )
 
-                // Campo de Contraseña
+                if (errorMessage.isNotEmpty()) {
+                    Text(
+                        text = errorMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+// Campo de Contraseña
                 OutlinedTextField(
                     value = password,
                     onValueChange = {
                         password = it
                         errorMessage = "" // Limpia el mensaje de error al escribir
                     },
-                    label = { Text("Contraseña") },
+                    label = {
+                        Text("Contraseña", color = if (errorMessage.isNotEmpty()) customRed else MaterialTheme.colorScheme.onBackground)
+                    },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Lock,
@@ -227,8 +250,25 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                         )
                     },
                     visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Introduce tu contraseña", color = MaterialTheme.colorScheme.onSurface) }, // Texto dentro del campo en color negro
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = customRed, // Borde rojo cuando está enfocado
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
+                        focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
+                        errorBorderColor = MaterialTheme.colorScheme.error, // Bordes de error
+                        errorLabelColor = MaterialTheme.colorScheme.error // Texto de error
+                    )
                 )
+
+                if (errorMessage.isNotEmpty()) {
+                    Text(
+                        text = errorMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
 
                 // Mostrar mensaje de error si hay
                 if (errorMessage.isNotEmpty()) {
@@ -381,6 +421,7 @@ fun MenuPrincipalScreen(navController: NavController, onLogout: () -> Unit) {
 // Reserva Screens
 @Composable
 fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, onLogout: () -> Unit) {
+    val customRed = Color(0xFF791414) // Color rojo
     var aula by remember { mutableStateOf("") }
     var fecha by remember { mutableStateOf("") }
     var horario by remember { mutableStateOf("") }
@@ -399,7 +440,7 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
             title = { Text("Reserva de Salas") },
             actions = {
                 TextButton(onClick = { navController.navigate("menu") }) {
-                    Text("Menú Principal")
+                    Text("Menú Principal", color = customRed)
                 }
             }
         )
@@ -412,7 +453,7 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
         ) {
             Button(
                 onClick = { navController.navigate("listarReservas") },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                colors = ButtonDefaults.buttonColors(containerColor = customRed), // Cambiado a customRed
                 modifier = Modifier.weight(1f)
             ) {
                 Text("Listar Reservas", color = MaterialTheme.colorScheme.onPrimary)
@@ -426,10 +467,6 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
                 Text("Cancelar Reservas", color = MaterialTheme.colorScheme.onSecondary)
             }
         }
-
-
-
-
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -447,18 +484,28 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
                 Text("Registrar Nueva Reserva", style = MaterialTheme.typography.headlineSmall)
 
 
-            //Campo de Aula
+                // Campo de Aula
                 OutlinedTextField(
                     value = aula,
                     onValueChange = {
                         aula = it
                         errorAula = !validarNumeroAula(it)
                     },
-                    label = { Text("Sala (1-10)") },
+                    label = {
+                        Text("Sala (1-10)", color = if (errorAula) customRed else MaterialTheme.colorScheme.onBackground)
+                    },
                     isError = errorAula,
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    placeholder = { Text("Ej: 5") }
+                    placeholder = { Text("Ej: 5", color = MaterialTheme.colorScheme.onSurface) }, // Texto dentro del campo en color negro
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = customRed, // Borde rojo cuando está enfocado
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
+                        focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
+                        errorBorderColor = MaterialTheme.colorScheme.error, // Bordes de error
+                        errorLabelColor = MaterialTheme.colorScheme.error // Texto de error
+                    )
                 )
 
                 if (errorAula) {
@@ -469,18 +516,29 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
                     )
                 }
 
-                // Campo Fecha
+// Campo Fecha
                 OutlinedTextField(
                     value = fecha,
                     onValueChange = {
                         fecha = it
                         errorFecha = !validarFormatoFecha(it)
                     },
-                    label = { Text("Fecha (dd/mm/aaaa)") },
+                    label = {
+                        Text("Fecha (dd/mm/aaaa)", color = if (errorFecha) customRed else MaterialTheme.colorScheme.onBackground)
+                    },
                     isError = errorFecha,
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("dd/mm/aaaa") }
+                    placeholder = { Text("dd/mm/aaaa", color = MaterialTheme.colorScheme.onSurface) }, // Texto dentro del campo en color negro
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = customRed, // Borde rojo cuando está enfocado
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
+                        focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
+                        errorBorderColor = MaterialTheme.colorScheme.error, // Bordes de error
+                        errorLabelColor = MaterialTheme.colorScheme.error // Texto de error
+                    )
                 )
+
                 if (errorFecha) {
                     Text(
                         "Formato de fecha inválido. Debe ser dd/mm/aaaa.",
@@ -489,23 +547,34 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
                     )
                 }
 
-                // Campo Horario
+// Campo Horario
                 OutlinedTextField(
                     value = horario,
                     onValueChange = {
                         horario = it
                         errorHorario = !validarFormatoHora(it)
                     },
-                    label = { Text("Horario (hh:mm)") },
+                    label = {
+                        Text("Horario (hh:mm)", color = if (errorHorario) customRed else MaterialTheme.colorScheme.onBackground)
+                    },
                     isError = errorHorario,
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("hh:mm") },
+                    placeholder = { Text("hh:mm", color = MaterialTheme.colorScheme.onSurface) }, // Texto dentro del campo en color negro
                     trailingIcon = {
                         IconButton(onClick = { timePickerDialogVisible = true }) {
-                            Icon(Icons.Default.Schedule, contentDescription = "Seleccionar Hora")
+                            Icon(Icons.Default.Schedule, contentDescription = "Seleccionar Hora", tint = Color(0xFF791414))
                         }
-                    }
+                    },
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = customRed, // Borde rojo cuando está enfocado
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
+                        focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
+                        errorBorderColor = MaterialTheme.colorScheme.error, // Bordes de error
+                        errorLabelColor = MaterialTheme.colorScheme.error // Texto de error
+                    )
                 )
+
                 if (errorHorario) {
                     Text(
                         "Formato de horario inválido. Debe ser hh:mm.",
@@ -528,7 +597,7 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
                     },
                     enabled = aula.isNotEmpty() && fecha.isNotEmpty() && horario.isNotEmpty() &&
                             !errorAula && !errorFecha && !errorHorario,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    colors = ButtonDefaults.buttonColors(containerColor = customRed),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Registrar Reserva", color = MaterialTheme.colorScheme.onPrimary)
@@ -577,6 +646,7 @@ fun validarFormatoFecha(fecha: String): Boolean {
 
 @Composable
 fun ListarReservasScreen(navController: NavController, reservas: List<Reserva>) {
+    val customRed = Color(0xFF791414)
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         TopAppBar(
             title = { Text("Listar Reservas") },
@@ -584,7 +654,11 @@ fun ListarReservasScreen(navController: NavController, reservas: List<Reserva>) 
                 IconButton(onClick = { navController.navigateUp() }) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
                 }
-            }
+            },
+            colors = TopAppBarDefaults.mediumTopAppBarColors(
+                containerColor = customRed,
+                titleContentColor = Color.White, // Letras del título en blanco
+                navigationIconContentColor = Color.White)
         )
         Spacer(modifier = Modifier.height(16.dp))
         if (reservas.isEmpty()) {
@@ -652,12 +726,20 @@ fun CancelarReservasScreen(navController: NavController, reservas: MutableList<R
 // Libros Screen
 @Composable
 fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
+    val customRed = Color(0xFF791414) // Color rojo
     var titulo by remember { mutableStateOf("") }
     var autor by remember { mutableStateOf("") }
     var anho by remember { mutableStateOf("") }
     var genero by remember { mutableStateOf("") }
     var isbn by remember { mutableStateOf("") }
+    val generosDisponibles = listOf("Ficción", "No Ficción", "Fantasía", "Ciencia Ficción", "Biografía", "Historia", "Misterio", "Romance")
     var portadaUrl by remember { mutableStateOf("") }
+    var errorTitulo by remember { mutableStateOf(false) }
+    var errorAutor by remember { mutableStateOf(false) }
+    var errorAnho by remember { mutableStateOf(false) }
+    var errorIsbn by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
+
 
     Column(
         modifier = Modifier
@@ -670,7 +752,7 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
             actions = {
                 Row {
                     TextButton(onClick = { navController.navigate("menu") }) {
-                        Text("Menú Principal")
+                        Text("Menú Principal", color = customRed)
                     }
                 }
             }
@@ -687,7 +769,7 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
         ) {
             Button(
                 onClick = { navController.navigate("listarLibros") },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                colors = ButtonDefaults.buttonColors(containerColor = customRed),
                 modifier = Modifier.weight(1f)
             ) {
                 Text("Listar Libros", color = MaterialTheme.colorScheme.onPrimary)
@@ -716,56 +798,190 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text("Registrar Nuevo Libro", style = MaterialTheme.typography.headlineSmall)
+
+                // Campo Título
                 OutlinedTextField(
                     value = titulo,
-                    onValueChange = { titulo = it },
+                    onValueChange = {
+                        titulo = it
+                        errorTitulo = it.isEmpty()
+                    },
                     label = { Text("Título") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = errorTitulo,
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = customRed, // Borde rojo cuando está enfocado
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
+                        focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
+                        errorBorderColor = MaterialTheme.colorScheme.error, // Opcional para bordes de error
+                        errorLabelColor = MaterialTheme.colorScheme.error // Opcional para texto de error
+                    )
                 )
+                if (errorTitulo) {
+                    Text(
+                        "El título no puede estar vacío",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                // Campo Autor
                 OutlinedTextField(
                     value = autor,
-                    onValueChange = { autor = it },
+                    onValueChange = {
+                        autor = it
+                        errorAutor = it.isEmpty()
+                    },
                     label = { Text("Autor") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = errorAutor,
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = customRed, // Borde rojo cuando está enfocado
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
+                        focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
+                        errorBorderColor = MaterialTheme.colorScheme.error, // Opcional para bordes de error
+                        errorLabelColor = MaterialTheme.colorScheme.error // Opcional para texto de error
+                    )
                 )
+                if (errorAutor) {
+                    Text(
+                        "El autor no puede estar vacío",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                // Campo Año
                 OutlinedTextField(
                     value = anho,
-                    onValueChange = { anho = it },
+                    onValueChange = {
+                        anho = it
+                        errorAnho = it.isEmpty() || it.toIntOrNull() == null || it.toInt() <= 0
+                    },
                     label = { Text("Año") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = errorAnho,
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = customRed, // Borde rojo cuando está enfocado
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
+                        focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
+                        errorBorderColor = MaterialTheme.colorScheme.error, // Opcional para bordes de error
+                        errorLabelColor = MaterialTheme.colorScheme.error // Opcional para texto de error
+                    )
                 )
-                OutlinedTextField(
-                    value = genero,
-                    onValueChange = { genero = it },
-                    label = { Text("Género") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                if (errorAnho) {
+                    Text(
+                        "El año debe ser un número positivo",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                // Campo Género (Desplegable)
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded }
+                ) {
+                    OutlinedTextField(
+                        value = genero,
+                        onValueChange = { genero = it },
+                        label = { Text("Género") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        readOnly = true,
+                        trailingIcon = {
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                        },
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            focusedBorderColor = customRed, // Borde rojo cuando está enfocado
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
+                            focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
+                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
+                            errorBorderColor = MaterialTheme.colorScheme.error, // Opcional para bordes de error
+                            errorLabelColor = MaterialTheme.colorScheme.error // Opcional para texto de error
+                        )
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        generosDisponibles.forEach { opcion ->
+                            DropdownMenuItem(
+                                text = { Text(opcion) },
+                                onClick = {
+                                    genero = opcion
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Campo ISBN
                 OutlinedTextField(
                     value = isbn,
-                    onValueChange = { isbn = it },
+                    onValueChange = {
+                        isbn = it
+                        errorIsbn = it.length != 13 || it.toLongOrNull() == null
+                    },
                     label = { Text("ISBN") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = errorIsbn,
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = customRed, // Borde rojo cuando está enfocado
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
+                        focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
+                        errorBorderColor = MaterialTheme.colorScheme.error, // Opcional para bordes de error
+                        errorLabelColor = MaterialTheme.colorScheme.error // Opcional para texto de error
+                    ),
+                    placeholder = { Text("Debe tener 13 dígitos") }
                 )
+                if (errorIsbn) {
+                    Text(
+                        "El ISBN debe ser un número de 13 dígitos",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                // Campo Portada (URL)
                 OutlinedTextField(
                     value = portadaUrl,
                     onValueChange = { portadaUrl = it },
                     label = { Text("Portada (URL)") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = customRed, // Borde rojo cuando está enfocado
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
+                        focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
+                        errorBorderColor = MaterialTheme.colorScheme.error, // Opcional para bordes de error
+                        errorLabelColor = MaterialTheme.colorScheme.error // Opcional para texto de error
+                    )
                 )
+
                 Spacer(modifier = Modifier.height(16.dp))
+
+                // Botón Registrar Libro
                 Button(
                     onClick = {
-                        if (titulo.isNotEmpty() && autor.isNotEmpty() && anho.isNotEmpty() && genero.isNotEmpty() && isbn.isNotEmpty() && portadaUrl.isNotEmpty()) {
-                            libros.add(Libro(titulo, autor, anho, genero, isbn, portadaUrl))
-                            titulo = ""
-                            autor = ""
-                            anho = ""
-                            genero = ""
-                            isbn = ""
-                            portadaUrl = ""
-                        }
+                        libros.add(Libro(titulo, autor, anho, genero, isbn, portadaUrl))
+                        titulo = ""
+                        autor = ""
+                        anho = ""
+                        genero = ""
+                        isbn = ""
+                        portadaUrl = ""
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    enabled = titulo.isNotEmpty() && autor.isNotEmpty() && anho.isNotEmpty() &&
+                            genero.isNotEmpty() && isbn.isNotEmpty() && portadaUrl.isNotEmpty() &&
+                            !errorTitulo && !errorAutor && !errorAnho && !errorIsbn,
+                    colors = ButtonDefaults.buttonColors(containerColor = customRed),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Registrar Libro", color = MaterialTheme.colorScheme.onPrimary)
@@ -778,6 +994,7 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
 // Función de listar libros
 @Composable
 fun ListarLibrosScreen(navController: NavController, libros: List<Libro>) {
+    val customRed = Color(0xFF791414)
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         TopAppBar(
             title = { Text("Listar Libros") },
@@ -786,7 +1003,10 @@ fun ListarLibrosScreen(navController: NavController, libros: List<Libro>) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver a Registro de Libros")
                 }
             },
-            colors = TopAppBarDefaults.mediumTopAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
+            colors = TopAppBarDefaults.mediumTopAppBarColors(
+                containerColor = customRed,
+                titleContentColor = Color.White, // Letras del título en blanco
+                navigationIconContentColor = Color.White)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
