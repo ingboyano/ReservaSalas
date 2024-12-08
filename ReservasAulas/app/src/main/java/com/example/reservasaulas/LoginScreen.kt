@@ -1,5 +1,6 @@
 package com.example.reservasaulas
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +33,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import okhttp3.ResponseBody
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.Body
+import retrofit2.http.POST
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,15 +113,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                     )
                 )
 
-                if (errorMessage.isNotEmpty()) {
-                    Text(
-                        text = errorMessage,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-
-// Campo de Contraseña
+                // Campo de Contraseña
                 OutlinedTextField(
                     value = password,
                     onValueChange = {
@@ -130,14 +131,14 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                     },
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Introduce tu contraseña", color = MaterialTheme.colorScheme.onSurface) }, // Texto dentro del campo en color negro
+                    placeholder = { Text("Introduce tu contraseña", color = MaterialTheme.colorScheme.onSurface) },
                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = customRed, // Borde rojo cuando está enfocado
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
-                        focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
-                        errorBorderColor = MaterialTheme.colorScheme.error, // Bordes de error
-                        errorLabelColor = MaterialTheme.colorScheme.error // Texto de error
+                        focusedBorderColor = customRed,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        focusedLabelColor = customRed,
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        errorBorderColor = MaterialTheme.colorScheme.error,
+                        errorLabelColor = MaterialTheme.colorScheme.error
                     )
                 )
 
@@ -149,23 +150,38 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                     )
                 }
 
-                // Mostrar mensaje de error si hay
-                if (errorMessage.isNotEmpty()) {
-                    Text(
-                        text = errorMessage,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
-                }
-
-                // Botón de Ingresar
                 Button(
                     onClick = {
+                        // Verificar los valores de usuario y contraseña antes de hacer la solicitud
+                        Log.d("LoginTest", "Usuario: $username, Contraseña: $password")
                         if (username.isEmpty() || password.isEmpty()) {
                             errorMessage = "Por favor, ingrese usuario y contraseña"
                         } else {
-                            onLoginSuccess()
+                            // Llamar a la API de login
+                            val loginRequest = LoginRequest(username, password)
+                            RetrofitClient.usuarioApi.login(loginRequest).enqueue(object : Callback<ResponseBody> {
+                                override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+                                    if (response.isSuccessful) {
+                                        val responseBody = response.body()?.string() ?: "Respuesta vacía"
+                                        Log.d("LoginResponse", "Código: ${response.code()}, Mensaje: ${response.message()}, Cuerpo: $responseBody")
+
+                                        if (responseBody == "Login exitoso") {
+                                            Log.d("Login", "Login exitoso")
+                                            onLoginSuccess() // Lógica de éxito
+                                        } else {
+                                            Log.e("LoginError", "Respuesta inesperada: $responseBody")
+                                            errorMessage = "Usuario o contraseña incorrectos"
+                                        }
+                                    } else {
+                                        Log.e("LoginError", "Código de respuesta: ${response.code()} - Mensaje: ${response.message()}")
+                                        errorMessage = "Usuario o contraseña incorrectos"
+                                    }
+                                }
+                                override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                                    Log.e("LoginFailure", "Error de conexión: ${t.message}")
+                                    errorMessage = "Error de conexión: ${t.message}"
+                                }
+                            })
                         }
                     },
                     modifier = Modifier
@@ -173,11 +189,10 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                         .height(50.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF791414),
-                        contentColor = Color.White),
+                        contentColor = Color.White
+                    ),
                     shape = MaterialTheme.shapes.medium
-                )
-
-                {
+                ) {
                     Text(
                         text = "Iniciar Sesión",
                         color = MaterialTheme.colorScheme.onPrimary,
@@ -188,5 +203,3 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
         }
     }
 }
-
-
