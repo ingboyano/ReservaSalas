@@ -1,68 +1,57 @@
 package com.payroll.PayrollSrv.controllers;
 
 import java.util.List;
-
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import com.payroll.PayrollSrv.jpa.Libro;
 import com.payroll.PayrollSrv.jpa.LibroRepository;
 
+import jakarta.persistence.EntityManager;
+
 @RestController
+@RequestMapping("/libros")
 public class LibroController {
 
+    @Autowired
+    private LibroRepository libroRepository;
 
-    private final LibroRepository repository;
-
-    public LibroController(LibroRepository repository) {
-        this.repository = repository;
+    // Endpoint para listar libros
+    @GetMapping
+    public List<Libro> getAllLibros() {
+        return libroRepository.findAll();
     }
 
-
-    @GetMapping("/libros/{id}")
-    public Libro getLibroById(@PathVariable Integer id) {
-        return repository.findById(id)
-            .orElseThrow(() -> new LibroNotFoundException(id));
+    // Endpoint para insertar un nuevo libro
+    @PostMapping
+    public ResponseEntity<Libro> createLibro(@RequestBody Libro libro) {
+        try {
+            Libro nuevoLibro = libroRepository.save(libro);
+            return new ResponseEntity<>(nuevoLibro, HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
-    @GetMapping("/libros")
-    public List<Libro> getAllLibros(){
-        return repository.findAll();
+    // (Opcional) Endpoint para eliminar libro
+    @Autowired
+private EntityManager entityManager;  // Inyectar EntityManager
 
+@DeleteMapping("/{isbn}")
+public ResponseEntity<HttpStatus> deleteLibro(@PathVariable("isbn") String isbn) {
+    try {
+        Libro libro = libroRepository.findByIsbn(isbn);
+        if (libro != null) {
+            libroRepository.delete(libro);
+            libroRepository.flush(); 
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    } catch (Exception e) {
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
-
-    @PostMapping("/libros")
-    public Libro createLibro( @RequestBody Libro libro) {
-        return repository.save(libro);
-    }
-
-    @PutMapping("/libros/{id}")
-    public Libro updateLibro(@PathVariable Integer id, @RequestBody Libro libro) {
-        return repository.findById(id)
-            .map(libro1 -> {
-                libro1.setTitulo(libro.getTitulo());
-                libro1.setAutor(libro.getAutor());
-                libro1.setIsbn(libro.getIsbn());
-                return repository.save(libro1);
-            })
-            .orElseThrow(() -> new LibroNotFoundException(id));
-    }
-
-    @DeleteMapping("/libros/{id}")
-    public Libro deleteLibro(@PathVariable Integer id) {
-        return repository.findById(id)
-            .map(libro -> {
-                repository.delete(libro);
-                return libro;
-            })
-            .orElseThrow(() -> new LibroNotFoundException(id));
-    }
-
-    
+}
 }

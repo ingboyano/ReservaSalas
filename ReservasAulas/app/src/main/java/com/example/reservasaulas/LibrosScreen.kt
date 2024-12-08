@@ -1,83 +1,54 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
-
 package com.example.reservasaulas
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import android.util.Log
+import android.widget.Toast
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-data class Libro(
-    val titulo: String,
-    val autor: String,
-    val anho: String,
-    val genero: String,
-    val isbn: String,
-    val portadaUrl: String
-)
-// Libros Screen
-@OptIn(ExperimentalMaterial3Api::class)
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.Response
 
 @Composable
 fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
     val customRed = Color(0xFF791414) // Color rojo
+    val context = LocalContext.current // Contexto para Toast
     var titulo by remember { mutableStateOf("") }
     var autor by remember { mutableStateOf("") }
-    var anho by remember { mutableStateOf("") }
+    var anho by remember { mutableStateOf(0) }
     var genero by remember { mutableStateOf("") }
     var isbn by remember { mutableStateOf("") }
-    val generosDisponibles = listOf("Ficción", "No Ficción", "Fantasía", "Ciencia Ficción", "Biografía", "Historia", "Misterio", "Romance")
     var portadaUrl by remember { mutableStateOf("") }
     var errorTitulo by remember { mutableStateOf(false) }
     var errorAutor by remember { mutableStateOf(false) }
     var errorAnho by remember { mutableStateOf(false) }
     var errorIsbn by remember { mutableStateOf(false) }
+    var errorPortadaUrl by remember { mutableStateOf(false) } // Nuevo estado para la URL
     var expanded by remember { mutableStateOf(false) }
-
+    val generosDisponibles = listOf(
+        "Ficción", "No Ficción", "Fantasía", "Ciencia Ficción",
+        "Biografía", "Historia", "Misterio", "Romance"
+    )
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Barra superior
         TopAppBar(
             title = { Text("Gestión de Libros") },
             actions = {
-                Row {
-                    TextButton(onClick = { navController.navigate("menu") }) {
-                        Text("Menú Principal", color = customRed)
-                    }
+                TextButton(onClick = { navController.navigate("menu") }) {
+                    Text("Menú Principal", color = customRed)
                 }
             }
         )
@@ -110,7 +81,6 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Formulario de ingreso de libros
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(8.dp)
@@ -123,7 +93,7 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
             ) {
                 Text("Registrar Nuevo Libro", style = MaterialTheme.typography.headlineSmall)
 
-                // Campo Título
+                // Título
                 OutlinedTextField(
                     value = titulo,
                     onValueChange = {
@@ -134,23 +104,15 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
                     modifier = Modifier.fillMaxWidth(),
                     isError = errorTitulo,
                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = customRed, // Borde rojo cuando está enfocado
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
-                        focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
-                        errorBorderColor = MaterialTheme.colorScheme.error, // Opcional para bordes de error
-                        errorLabelColor = MaterialTheme.colorScheme.error // Opcional para texto de error
+                        focusedBorderColor = customRed,
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 )
                 if (errorTitulo) {
-                    Text(
-                        "El título no puede estar vacío",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Text("El título no puede estar vacío", color = MaterialTheme.colorScheme.error)
                 }
 
-                // Campo Autor
+                // Autor
                 OutlinedTextField(
                     value = autor,
                     onValueChange = {
@@ -161,50 +123,35 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
                     modifier = Modifier.fillMaxWidth(),
                     isError = errorAutor,
                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = customRed, // Borde rojo cuando está enfocado
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
-                        focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
-                        errorBorderColor = MaterialTheme.colorScheme.error, // Opcional para bordes de error
-                        errorLabelColor = MaterialTheme.colorScheme.error // Opcional para texto de error
+                        focusedBorderColor = customRed,
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 )
                 if (errorAutor) {
-                    Text(
-                        "El autor no puede estar vacío",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Text("El autor no puede estar vacío", color = MaterialTheme.colorScheme.error)
                 }
 
-                // Campo Año
+                // Año
                 OutlinedTextField(
-                    value = anho,
+                    value = anho.toString(), // Convertimos el valor de anho a String
                     onValueChange = {
-                        anho = it
-                        errorAnho = it.isEmpty() || it.toIntOrNull() == null || it.toInt() <= 0
+                        // Intentamos convertir el texto a entero
+                        anho = it.toIntOrNull() ?: 0 // Si no es un número válido, asignamos 0
+                        errorAnho = anho <= 0 // Validamos que el año sea mayor a 0
                     },
                     label = { Text("Año") },
                     modifier = Modifier.fillMaxWidth(),
                     isError = errorAnho,
                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = customRed, // Borde rojo cuando está enfocado
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
-                        focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
-                        errorBorderColor = MaterialTheme.colorScheme.error, // Opcional para bordes de error
-                        errorLabelColor = MaterialTheme.colorScheme.error // Opcional para texto de error
-                    )
+                        focusedBorderColor = customRed,
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
                 )
                 if (errorAnho) {
-                    Text(
-                        "El año debe ser un número positivo",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Text("Debe ser un número positivo", color = MaterialTheme.colorScheme.error)
                 }
 
-                // Campo Género (Desplegable)
+                // Género
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded }
@@ -213,21 +160,12 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
                         value = genero,
                         onValueChange = { genero = it },
                         label = { Text("Género") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(),
-                        readOnly = true,
-                        trailingIcon = {
-                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                        },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(),
                         colors = TextFieldDefaults.outlinedTextFieldColors(
-                            focusedBorderColor = customRed, // Borde rojo cuando está enfocado
-                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
-                            focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
-                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
-                            errorBorderColor = MaterialTheme.colorScheme.error, // Opcional para bordes de error
-                            errorLabelColor = MaterialTheme.colorScheme.error // Opcional para texto de error
-                        )
+                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            focusedBorderColor = customRed),
+                        readOnly = true,
+                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, null) }
                     )
                     ExposedDropdownMenu(
                         expanded = expanded,
@@ -245,7 +183,7 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
                     }
                 }
 
-                // Campo ISBN
+                // ISBN
                 OutlinedTextField(
                     value = isbn,
                     onValueChange = {
@@ -254,57 +192,66 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
                     },
                     label = { Text("ISBN") },
                     modifier = Modifier.fillMaxWidth(),
-                    isError = errorIsbn,
                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = customRed, // Borde rojo cuando está enfocado
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
-                        focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
-                        errorBorderColor = MaterialTheme.colorScheme.error, // Opcional para bordes de error
-                        errorLabelColor = MaterialTheme.colorScheme.error // Opcional para texto de error
-                    ),
-                    placeholder = { Text("Debe tener 13 dígitos") }
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        focusedBorderColor = customRed),
+                    isError = errorIsbn
                 )
                 if (errorIsbn) {
-                    Text(
-                        "El ISBN debe ser un número de 13 dígitos",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Text("El ISBN debe tener 13 dígitos", color = MaterialTheme.colorScheme.error)
                 }
 
-                // Campo Portada (URL)
+                // URL de portada
                 OutlinedTextField(
                     value = portadaUrl,
-                    onValueChange = { portadaUrl = it },
-                    label = { Text("Portada (URL)") },
+                    onValueChange = {
+                        portadaUrl = it
+                        errorPortadaUrl = it.isEmpty() || !it.startsWith("http") // Validar URL
+                    },
+                    label = { Text("URL de portada") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = customRed, // Borde rojo cuando está enfocado
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
-                        focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
-                        errorBorderColor = MaterialTheme.colorScheme.error, // Opcional para bordes de error
-                        errorLabelColor = MaterialTheme.colorScheme.error // Opcional para texto de error
-                    )
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        focusedBorderColor = customRed),
+                    isError = errorPortadaUrl
                 )
+                if (errorPortadaUrl) {
+                    Text("La URL debe ser válida", color = MaterialTheme.colorScheme.error)
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Botón Registrar Libro
+                // Botón Registrar
                 Button(
                     onClick = {
-                        libros.add(Libro(titulo, autor, anho, genero, isbn, portadaUrl))
-                        titulo = ""
-                        autor = ""
-                        anho = ""
-                        genero = ""
-                        isbn = ""
-                        portadaUrl = ""
+                        val libroNuevo = Libro(titulo, autor, anho, genero, isbn, portadaUrl)
+
+                        RetrofitClient.libroApi.createLibro(libroNuevo).enqueue(object : retrofit2.Callback<Libro> {
+                            override fun onResponse(call: retrofit2.Call<Libro>, response: retrofit2.Response<Libro>) {
+                                if (response.isSuccessful) {
+                                    // Limpiar campos si la respuesta es exitosa
+                                    titulo = ""
+                                    autor = ""
+                                    anho = 0
+                                    genero = ""
+                                    isbn = ""
+                                    portadaUrl = ""
+                                    Toast.makeText(context, "Libro registrado con éxito", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    // Manejar error en la respuesta de la API
+                                    Log.e("API_ERROR", "Error: ${response.errorBody()?.string()}")
+                                }
+                            }
+
+                            override fun onFailure(call: retrofit2.Call<Libro>, t: Throwable) {
+                                // Manejar error en la conexión
+                                Log.e("API_ERROR", "Fallo en la conexión: ${t.message}")
+                                Toast.makeText(context, "Error de conexión", Toast.LENGTH_SHORT).show()
+                            }
+                        })
                     },
-                    enabled = titulo.isNotEmpty() && autor.isNotEmpty() && anho.isNotEmpty() &&
-                            genero.isNotEmpty() && isbn.isNotEmpty() && portadaUrl.isNotEmpty() &&
-                            !errorTitulo && !errorAutor && !errorAnho && !errorIsbn,
+                    enabled = titulo.isNotEmpty() && autor.isNotEmpty() && anho > 0 && genero.isNotEmpty() &&
+                            isbn.isNotEmpty() && portadaUrl.isNotEmpty() && !errorTitulo && !errorAutor && !errorAnho && !errorIsbn && !errorPortadaUrl,
                     colors = ButtonDefaults.buttonColors(containerColor = customRed),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -314,3 +261,4 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
         }
     }
 }
+

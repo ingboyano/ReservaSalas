@@ -141,7 +141,7 @@ fun MainApp() {
                     ListarLibrosScreen(navController, libros)
                 }
                 composable("cancelarLibros") {
-                    CancelarLibrosScreen(navController, libros)
+                    CancelarLibrosScreen(navController = navController, libros = libros)
                 }
             }
         }

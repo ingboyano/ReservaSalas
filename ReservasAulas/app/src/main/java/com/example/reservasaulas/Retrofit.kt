@@ -26,6 +26,9 @@ object RetrofitClient {
             .build()
     }
 
+
+
+
     // Crear instancias de las APIs
     val usuarioApi: UsuarioApi by lazy {
         retrofit.create(UsuarioApi::class.java)  // Instancia de UsuarioApi
