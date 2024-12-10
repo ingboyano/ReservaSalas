@@ -21,6 +21,9 @@ interface UsuarioApi {
 
     @GET("/usuarios") // Endpoint para obtener todos los usuarios
     fun getAllUsuarios(): Call<List<Usuario>> // Obtener lista de usuarios
+
+    @GET("/usuarios/{idUsuario}") // Endpoint para obtener un usuario específico
+    fun getUsuarioById(@Path("idUsuario") idUsuario: Int): Call<Usuario>
 }
 
 // Clase de datos de un usuario

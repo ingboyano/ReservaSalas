@@ -1,64 +1,59 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.example.reservasaulas
 
-import android.app.TimePickerDialog
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import android.content.Context
+import android.util.Log
+import android.widget.Toast
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 
-// Reserva Screens
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, onLogout: () -> Unit) {
+fun ReservasScreen(navController: NavController, reservas: List<Reserva>) {
     val customRed = Color(0xFF791414) // Color rojo
+    val context = LocalContext.current // Contexto para Toast
     var aula by remember { mutableStateOf("") }
     var fecha by remember { mutableStateOf("") }
-    var horario by remember { mutableStateOf("") }
+    var horaInicio by remember { mutableStateOf("") }
+    var usuarioId by remember { mutableStateOf(0) }  // Inicializamos el ID del usuario como 0
+    var usuarioLogueado by remember { mutableStateOf<Usuario?>(null) } // Usuario logueado
+
     var errorAula by remember { mutableStateOf(false) }
-    var errorHorario by remember { mutableStateOf(false) }
     var errorFecha by remember { mutableStateOf(false) }
-    var timePickerDialogVisible by remember { mutableStateOf(false) }
+    var errorHoraInicio by remember { mutableStateOf(false) }
+
+    // Obtener usuario logueado
+    LaunchedEffect(key1 = usuarioId) {
+        if (usuarioId != 0) {
+            RetrofitClient.usuarioApi.getUsuarioById(usuarioId).enqueue(object : retrofit2.Callback<Usuario> {
+                override fun onResponse(call: retrofit2.Call<Usuario>, response: retrofit2.Response<Usuario>) {
+                    if (response.isSuccessful) {
+                        usuarioLogueado = response.body()
+                    } else {
+                        Log.e("API_ERROR", "No se pudo obtener el usuario")
+                    }
+                }
+
+                override fun onFailure(call: retrofit2.Call<Usuario>, t: Throwable) {
+                    Log.e("API_ERROR", "Fallo en la conexión: ${t.message}")
+                }
+            })
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Barra superior
         TopAppBar(
-            title = { Text("Reserva de Salas") },
+            title = { Text("Gestionar Reservas") },
             actions = {
                 TextButton(onClick = { navController.navigate("menu") }) {
                     Text("Menú Principal", color = customRed)
@@ -66,6 +61,10 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
             }
         )
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+
+        // Botones de navegación
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -74,7 +73,7 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
         ) {
             Button(
                 onClick = { navController.navigate("listarReservas") },
-                colors = ButtonDefaults.buttonColors(containerColor = customRed), // Cambiado a customRed
+                colors = ButtonDefaults.buttonColors(containerColor = customRed),
                 modifier = Modifier.weight(1f)
             ) {
                 Text("Listar Reservas", color = MaterialTheme.colorScheme.onPrimary)
@@ -91,7 +90,6 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Formulario de ingreso de reservas
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(8.dp)
@@ -104,104 +102,61 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
             ) {
                 Text("Registrar Nueva Reserva", style = MaterialTheme.typography.headlineSmall)
 
-
-                // Campo de Aula
+                // Aula
                 OutlinedTextField(
                     value = aula,
                     onValueChange = {
                         aula = it
-                        errorAula = !validarNumeroAula(it)
+                        errorAula = aula.isEmpty()
                     },
-                    label = {
-                        Text("Sala (1-10)", color = if (errorAula) customRed else MaterialTheme.colorScheme.onBackground)
-                    },
-                    isError = errorAula,
+                    label = { Text("Aula") },
                     modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    placeholder = { Text("Ej: 5", color = MaterialTheme.colorScheme.onSurface) }, // Texto dentro del campo en color negro
+                    isError = errorAula,
                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = customRed, // Borde rojo cuando está enfocado
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
-                        focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
-                        errorBorderColor = MaterialTheme.colorScheme.error, // Bordes de error
-                        errorLabelColor = MaterialTheme.colorScheme.error // Texto de error
+                        focusedBorderColor = customRed,
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 )
-
                 if (errorAula) {
-                    Text(
-                        text = "El número de sala debe estar entre 1 y 10.",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Text("El aula no puede estar vacía", color = MaterialTheme.colorScheme.error)
                 }
 
-// Campo Fecha
+                // Fecha
                 OutlinedTextField(
                     value = fecha,
                     onValueChange = {
                         fecha = it
-                        errorFecha = !validarFormatoFecha(it)
+                        errorFecha = fecha.isEmpty()
                     },
-                    label = {
-                        Text("Fecha (dd/mm/aaaa)", color = if (errorFecha) customRed else MaterialTheme.colorScheme.onBackground)
-                    },
-                    isError = errorFecha,
+                    label = { Text("Fecha") },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("dd/mm/aaaa", color = MaterialTheme.colorScheme.onSurface) }, // Texto dentro del campo en color negro
+                    isError = errorFecha,
                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = customRed, // Borde rojo cuando está enfocado
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
-                        focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
-                        errorBorderColor = MaterialTheme.colorScheme.error, // Bordes de error
-                        errorLabelColor = MaterialTheme.colorScheme.error // Texto de error
+                        focusedBorderColor = customRed,
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 )
-
                 if (errorFecha) {
-                    Text(
-                        "Formato de fecha inválido. Debe ser dd/mm/aaaa.",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Text("La fecha no puede estar vacía", color = MaterialTheme.colorScheme.error)
                 }
 
-// Campo Horario
+                // Hora Inicio
                 OutlinedTextField(
-                    value = horario,
+                    value = horaInicio,
                     onValueChange = {
-                        horario = it
-                        errorHorario = !validarFormatoHora(it)
+                        horaInicio = it
+                        errorHoraInicio = horaInicio.isEmpty()
                     },
-                    label = {
-                        Text("Horario (hh:mm)", color = if (errorHorario) customRed else MaterialTheme.colorScheme.onBackground)
-                    },
-                    isError = errorHorario,
+                    label = { Text("Horario") },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("hh:mm", color = MaterialTheme.colorScheme.onSurface) }, // Texto dentro del campo en color negro
-                    trailingIcon = {
-                        IconButton(onClick = { timePickerDialogVisible = true }) {
-                            Icon(Icons.Default.Schedule, contentDescription = "Seleccionar Hora", tint = Color(0xFF791414))
-                        }
-                    },
+                    isError = errorHoraInicio,
                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = customRed, // Borde rojo cuando está enfocado
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Borde gris sin foco
-                        focusedLabelColor = customRed, // Texto rojo de la etiqueta al enfocar
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Texto gris de la etiqueta sin foco
-                        errorBorderColor = MaterialTheme.colorScheme.error, // Bordes de error
-                        errorLabelColor = MaterialTheme.colorScheme.error // Texto de error
+                        focusedBorderColor = customRed,
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 )
-
-                if (errorHorario) {
-                    Text(
-                        "Formato de horario inválido. Debe ser hh:mm.",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                if (errorHoraInicio) {
+                    Text("La hora de inicio no puede estar vacía", color = MaterialTheme.colorScheme.error)
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -209,15 +164,25 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
                 // Botón Registrar
                 Button(
                     onClick = {
-                        if (!errorAula && !errorFecha && !errorHorario) {
-                            reservas.add(Reserva(aula, fecha, horario))
-                            aula = ""
-                            fecha = ""
-                            horario = ""
-                        }
-                    },
-                    enabled = aula.isNotEmpty() && fecha.isNotEmpty() && horario.isNotEmpty() &&
-                            !errorAula && !errorFecha && !errorHorario,
+                            val nuevaReserva = Reserva(aula, fecha, horaInicio, usuarioId)
+                            RetrofitClient.reservaApi.createReserva(nuevaReserva).enqueue(object : retrofit2.Callback<Reserva> {
+                                override fun onResponse(call: retrofit2.Call<Reserva>, response: retrofit2.Response<Reserva>) {
+                                    if (response.isSuccessful) {
+                                        aula = ""
+                                        fecha = ""
+                                        horaInicio = ""
+                                        Toast.makeText(context, "Reserva registrada con éxito", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Log.e("API_ERROR", "Error: ${response.errorBody()?.string()}")
+                                    }
+                                }
+                                override fun onFailure(call: retrofit2.Call<Reserva>, t: Throwable) {
+                                    Log.e("API_ERROR", "Fallo en la conexión: ${t.message}")
+                                    Toast.makeText(context, "Error de conexión", Toast.LENGTH_SHORT).show()
+                                }
+                            })
+                        },
+                    enabled = aula.isNotEmpty() && fecha.isNotEmpty() && horaInicio.isNotEmpty(),
                     colors = ButtonDefaults.buttonColors(containerColor = customRed),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -226,41 +191,5 @@ fun ReservaScreen(navController: NavController, reservas: MutableList<Reserva>, 
             }
         }
     }
-
-    // TimePickerDialog
-    if (timePickerDialogVisible) {
-        val context = LocalContext.current
-        val timePickerDialog = remember {
-            TimePickerDialog(
-                context,
-                { _, hourOfDay, minute ->
-                    horario = "%02d:%02d".format(hourOfDay, minute)
-                    timePickerDialogVisible = false
-                },
-                12, 0, true
-            )
-        }
-        timePickerDialog.show()
-    }
 }
-
-// Validar número de aula
-fun validarNumeroAula(aula: String): Boolean {
-    val numero = aula.toIntOrNull()
-    return numero != null && numero in 1..10
-}
-
-// Validar formato de hora
-fun validarFormatoHora(hora: String): Boolean {
-    val regex = Regex("^([01]\\d|2[0-3]):([0-5]\\d)$")
-    return regex.matches(hora)
-}
-
-// Validar formato de fecha
-fun validarFormatoFecha(fecha: String): Boolean {
-    val regex = Regex("^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/(\\d{4})$")
-    return regex.matches(fecha)
-}
-
-
 

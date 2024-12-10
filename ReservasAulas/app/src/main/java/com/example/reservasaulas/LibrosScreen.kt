@@ -242,7 +242,6 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
                                     Log.e("API_ERROR", "Error: ${response.errorBody()?.string()}")
                                 }
                             }
-
                             override fun onFailure(call: retrofit2.Call<Libro>, t: Throwable) {
                                 // Manejar error en la conexión
                                 Log.e("API_ERROR", "Fallo en la conexión: ${t.message}")

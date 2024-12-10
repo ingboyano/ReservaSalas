@@ -3,6 +3,7 @@ package com.payroll.PayrollSrv.jpa;
 import jakarta.persistence.*;
 import lombok.Data;
 
+
 @Data
 @Entity
 @Table(name = "reservas")
@@ -14,16 +15,16 @@ public class Reserva {
     private Integer idReserva;
 
     @Column(name = "aula")
-    private String aula; // Sala donde se realiza la reserva
+    private String aula;
 
     @Column(name = "fecha")
-    private String fecha; // Fecha en formato "dd/MM/yyyy"
+    private String fecha;
 
     @Column(name = "horario")
-    private String horario; // Horario en formato "hh:mm"
+    private String horario;
 
+    // Relación con el usuario
     @ManyToOne
-    @JoinColumn(name = "usuario_id", nullable = false) // Foreign key to Usuario
-    private Usuario usuario; // Link back to Usuario
+    @JoinColumn(name = "id_usuario")
+    private Usuario usuario;
 }
-
