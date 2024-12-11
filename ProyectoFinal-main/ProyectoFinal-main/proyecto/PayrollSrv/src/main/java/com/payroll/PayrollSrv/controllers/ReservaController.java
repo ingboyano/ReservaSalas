@@ -14,12 +14,9 @@ import java.util.List;
 public class ReservaController {
 
     private final ReservaRepository reservaRepository;
-    private final UsuarioRepository usuarioRepository;
 
-    @Autowired
-    public ReservaController(ReservaRepository reservaRepository, UsuarioRepository usuarioRepository) {
+    public ReservaController(ReservaRepository reservaRepository) {
         this.reservaRepository = reservaRepository;
-        this.usuarioRepository = usuarioRepository;
     }
 
     // Obtener una reserva por su ID
@@ -38,14 +35,6 @@ public class ReservaController {
     // Crear una nueva reserva
     @PostMapping
     public Reserva createReserva(@RequestBody Reserva reserva) {
-        // Obtener el usuario relacionado por su ID
-        Usuario usuario = usuarioRepository.findById(reserva.getUsuario().getIdUsuario())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + reserva.getUsuario().getIdUsuario()));
-        
-        // Asignar el usuario a la reserva
-        reserva.setUsuario(usuario);
-
-        // Guardar la reserva en la base de datos
         return reservaRepository.save(reserva);
     }
 
@@ -82,4 +71,20 @@ public class ReservaController {
         }
         return reserva;
     }
+
+    // Eliminar una reserva por aula y horario
+    @DeleteMapping("/aula/{aula}/horario/{horario}")
+    public String deleteReservaByAulaAndHorario(@PathVariable String aula, @PathVariable String horario) {
+        // Buscar la reserva que coincida con aula y horario
+        Reserva reserva = reservaRepository.findByAulaAndHorario(aula, horario);
+
+        if (reserva != null) {
+            reservaRepository.delete(reserva);
+            return "Reserva eliminada con éxito: Aula: " + aula + ", Horario: " + horario;
+        } else {
+            throw new RuntimeException("Reserva no encontrada con Aula: " + aula + " y Horario: " + horario);
+        }
+    }
+
+
 }

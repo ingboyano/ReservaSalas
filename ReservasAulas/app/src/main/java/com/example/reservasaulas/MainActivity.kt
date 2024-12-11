@@ -82,7 +82,7 @@ fun MainApp() {
                     ReservasScreen(navController = navController, reservas = reservas)
                 }
                 composable("listarReservas") {
-                    ListarReservasScreen(navController, reservas)
+                    ListarReservasScreen(navController = navController, reservas = reservas)
                 }
                 composable("cancelarReservas") {
                     CancelarReservasScreen(navController, reservas)

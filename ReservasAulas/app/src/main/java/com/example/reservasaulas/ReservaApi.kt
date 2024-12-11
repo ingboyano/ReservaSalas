@@ -20,4 +20,10 @@ interface ReservaApi {
 
     @POST("/reservas")
     fun createReserva(@Body reserva: Reserva): Call<Reserva>
+
+    @DELETE("/reservas/aula/{aula}/horario/{horario}")
+    fun deleteReservaByAulaAndHorario(
+        @Path("aula") aula: String,
+        @Path("horario") horario: String
+    ): Call<String>
 }

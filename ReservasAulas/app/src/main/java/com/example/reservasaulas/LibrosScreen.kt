@@ -48,9 +48,13 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
             title = { Text("Gestión de Libros") },
             actions = {
                 TextButton(onClick = { navController.navigate("menu") }) {
-                    Text("Menú Principal", color = customRed)
+                    Text("Menú Principal", color = Color.White)
                 }
-            }
+            },
+            colors = TopAppBarDefaults.mediumTopAppBarColors(
+                containerColor = customRed,
+                titleContentColor = Color.White,
+                navigationIconContentColor = Color.White)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
