@@ -26,7 +26,6 @@ fun ReservasScreen(navController: NavController, reservas: List<Reserva>) {
     var usuarioId by remember { mutableStateOf(0) }  // Inicializamos el ID del usuario como 0
     var usuarioLogueado by remember { mutableStateOf<Usuario?>(null) } // Usuario logueado
 
-    var expanded by remember { mutableStateOf(false) } // Para controlar el estado de expansión
     var errorAula by remember { mutableStateOf(false) }
     var errorFecha by remember { mutableStateOf(false) }
     var errorHoraInicio by remember { mutableStateOf(false) }
@@ -131,30 +130,40 @@ fun ReservasScreen(navController: NavController, reservas: List<Reserva>) {
 
                 // Aula (Multiselección)
                 ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = it }
+                    expanded = selectedAulas.isNotEmpty(),
+                    onExpandedChange = { /* Acción si es necesario */ }
                 ) {
                     OutlinedTextField(
                         value = selectedAulas.joinToString(", "),
-                        onValueChange = { /* No hacer nada, solo mostrar la selección */ },
+                        onValueChange = { /* No cambia, solo para mostrar selección*/ },
                         label = { Text("Aulas") },
                         readOnly = true,
                         modifier = Modifier.fillMaxWidth(),
+                        isError = errorAula,
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            focusedBorderColor = customRed,
+                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        ),
                         trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                            ExposedDropdownMenuDefaults.TrailingIcon(
+                                expanded = selectedAulas.isNotEmpty()
+                            )
                         }
                     )
                     ExposedDropdownMenu(
                         expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                        onDismissRequest = { expanded = false } // Cierra el menú al hacer clic afuera
                     ) {
                         aulas.forEach { aulaOption ->
-                            DropdownMenuItem(onClick = {
-                                selectedAulas = selectedAulas.toMutableList().apply {
-                                    if (!contains(aulaOption)) add(aulaOption)
+                            DropdownMenuItem(
+                                onClick = {
+                                    // Crea una nueva lista para que se detecte la recomposición
+                                    if (!selectedAulas.contains(aulaOption)) {
+                                        selectedAulas = selectedAulas + aulaOption // Usa la suma de listas
+                                    }
+                                    expanded = false // Cierra el menú
                                 }
-                                expanded = false // Cerrar el menú después de seleccionar
-                            }) {
+                            ) {
                                 Text(aulaOption)
                             }
                         }
