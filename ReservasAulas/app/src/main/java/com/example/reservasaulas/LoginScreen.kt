@@ -159,10 +159,10 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                         } else {
                             // Llamar a la API de login
                             val loginRequest = LoginRequest(username, password)
-                            RetrofitClient.usuarioApi.login(loginRequest).enqueue(object : Callback<ResponseBody> {
-                                override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+                            RetrofitClient.usuarioApi.login(loginRequest).enqueue(object : Callback<Usuario> {
+                                override fun onResponse(call: Call<Usuario>, response: Response<Usuario>) {
                                     if (response.isSuccessful) {
-                                        val responseBody = response.body()?.string() ?: "Respuesta vacía"
+                                        val usuario = response.body()?.string() ?: "Respuesta vacía"
                                         Log.d("LoginResponse", "Código: ${response.code()}, Mensaje: ${response.message()}, Cuerpo: $responseBody")
 
                                         if (responseBody == "Login exitoso") {

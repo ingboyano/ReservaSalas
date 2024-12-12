@@ -1,3 +1,4 @@
+
 @file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.example.reservasaulas
@@ -30,27 +31,7 @@ fun ReservasScreen(navController: NavController, reservas: List<Reserva>) {
     var errorFecha by remember { mutableStateOf(false) }
     var errorHoraInicio by remember { mutableStateOf(false) }
 
-    // Lista de opciones de aulas
-    val aulas = listOf("Aula 1", "Aula 2", "Aula 3", "Aula 4", "Aula 5", "Aula 6")
-    var selectedAulas by remember { mutableStateOf(listOf<String>()) }
-
-    // Expresión regular para validar el formato de la fecha (dd/MM/yyyy)
-    val fechaRegex = """^\d{2}/\d{2}/\d{4}$""".toRegex()
-
-    // Expresión regular para validar el formato de la hora (HH:mm)
-    val horaRegex = """^([01]?[0-9]|2[0-3]):([0-5]?[0-9])$""".toRegex()
-
-    // Validar la fecha
-    fun validarFecha(fecha: String): Boolean {
-        return fechaRegex.matches(fecha)
-    }
-
-    // Validar la hora
-    fun validarHora(hora: String): Boolean {
-        return horaRegex.matches(hora)
-    }
-
-    // Cargar el usuarioId desde SharedPreferences cuando la pantalla se inicializa
+    // Cargar el usuarioId desde SharedPreferences cuando la pantalla se inicializa (VER CON EL PROFE)
     LaunchedEffect(key1 = usuarioId) {
         if (usuarioId != 0) {
             RetrofitClient.usuarioApi.getUsuarioById(usuarioId).enqueue(object : retrofit2.Callback<Usuario> {
@@ -90,6 +71,7 @@ fun ReservasScreen(navController: NavController, reservas: List<Reserva>) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+
         // Botones de navegación
         Row(
             modifier = Modifier
@@ -128,107 +110,111 @@ fun ReservasScreen(navController: NavController, reservas: List<Reserva>) {
             ) {
                 Text("Registrar Nueva Reserva", style = MaterialTheme.typography.headlineSmall)
 
-                // Aula (Multiselección)
-                ExposedDropdownMenuBox(
-                    expanded = selectedAulas.isNotEmpty(),
-                    onExpandedChange = { /* Acción si es necesario */ }
-                ) {
-                    OutlinedTextField(
-                        value = selectedAulas.joinToString(", "),
-                        onValueChange = { /* No cambia, solo para mostrar selección*/ },
-                        label = { Text("Aulas") },
-                        readOnly = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = errorAula,
-                        colors = TextFieldDefaults.outlinedTextFieldColors(
-                            focusedBorderColor = customRed,
-                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        ),
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(
-                                expanded = selectedAulas.isNotEmpty()
-                            )
-                        }
+                // Aula
+                OutlinedTextField(
+                    value = aula,
+                    onValueChange = {
+                        aula = it
+                        errorAula = aula.isEmpty()
+                    },
+                    label = { Text("Aula") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = errorAula,
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = customRed,
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false } // Cierra el menú al hacer clic afuera
-                    ) {
-                        aulas.forEach { aulaOption ->
-                            DropdownMenuItem(
-                                onClick = {
-                                    // Crea una nueva lista para que se detecte la recomposición
-                                    if (!selectedAulas.contains(aulaOption)) {
-                                        selectedAulas = selectedAulas + aulaOption // Usa la suma de listas
-                                    }
-                                    expanded = false // Cierra el menú
-                                }
-                            ) {
-                                Text(aulaOption)
-                            }
-                        }
-                    }
-                }
-
+                )
                 if (errorAula) {
-                    Text("Debe seleccionar al menos un aula", color = MaterialTheme.colorScheme.error)
+                    Text("El aula no puede estar vacía", color = MaterialTheme.colorScheme.error)
                 }
 
-                // Campo de Fecha
+                // Fecha
                 OutlinedTextField(
                     value = fecha,
                     onValueChange = {
                         fecha = it
-                        errorFecha = !validarFecha(it)
+                        errorFecha = fecha.isEmpty()
                     },
-                    label = { Text("Fecha (dd/MM/yyyy)") },
+                    label = { Text("Fecha") },
                     modifier = Modifier.fillMaxWidth(),
                     isError = errorFecha,
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = customRed,
                         unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 )
                 if (errorFecha) {
-                    Text("Formato de fecha inválido. Use dd/MM/yyyy", color = MaterialTheme.colorScheme.error)
+                    Text("La fecha no puede estar vacía", color = MaterialTheme.colorScheme.error)
                 }
 
-                // Campo de Hora de Inicio
+                // Hora Inicio
                 OutlinedTextField(
                     value = horaInicio,
                     onValueChange = {
                         horaInicio = it
-                        errorHoraInicio = !validarHora(it)
+                        errorHoraInicio = horaInicio.isEmpty()
                     },
-                    label = { Text("Hora de Inicio (HH:mm)") },
+                    label = { Text("Horario") },
                     modifier = Modifier.fillMaxWidth(),
                     isError = errorHoraInicio,
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = customRed,
                         unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 )
                 if (errorHoraInicio) {
-                    Text("Formato de hora inválido. Use HH:mm", color = MaterialTheme.colorScheme.error)
+                    Text("La hora de inicio no puede estar vacía", color = MaterialTheme.colorScheme.error)
                 }
 
-                // Botón de confirmación o validación
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Botón Registrar
                 Button(
                     onClick = {
-                        if (selectedAulas.isEmpty() || errorFecha || errorHoraInicio) {
-                            // Mostrar un mensaje de error si hay campos inválidos
-                            Toast.makeText(context, "Por favor corrija los errores", Toast.LENGTH_SHORT).show()
-                        } else {
-                            // Proceder con la reserva
-                            // Implementar lógica de reserva aquí
-                        }
+                        val nuevaReserva = Reserva(aula, fecha, horaInicio, usuarioId)
+                        RetrofitClient.reservaApi.createReserva(nuevaReserva).enqueue(object : retrofit2.Callback<Reserva> {
+                            override fun onResponse(call: retrofit2.Call<Reserva>, response: retrofit2.Response<Reserva>) {
+                                if (response.isSuccessful) {
+                                    aula = ""
+                                    fecha = ""
+                                    horaInicio = ""
+                                    Toast.makeText(context, "Reserva registrada con éxito", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Log.e("API_ERROR", "Error: ${response.errorBody()?.string()}")
+                                }
+                            }
+                            override fun onFailure(call: retrofit2.Call<Reserva>, t: Throwable) {
+                                Log.e("API_ERROR", "Fallo en la conexión: ${t.message}")
+                                Toast.makeText(context, "Error de conexión", Toast.LENGTH_SHORT).show()
+                            }
+                        })
                     },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = customRed)
+                    enabled = aula.isNotEmpty() && fecha.isNotEmpty() && horaInicio.isNotEmpty(),
+                    colors = ButtonDefaults.buttonColors(containerColor = customRed),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Confirmar Reserva", color = Color.White)
+                    Text("Registrar Reserva", color = MaterialTheme.colorScheme.onPrimary)
+                }
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "ID Usuario: $usuarioId",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }
