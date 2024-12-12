@@ -19,14 +19,17 @@ public class AuthController {
 
     // Endpoint para login
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<Usuario> login(@RequestBody LoginRequest loginRequest) {
         // Autenticar al usuario con el nombre de usuario y contraseña
         Usuario usuario = authService.authenticate(loginRequest.getNombreUsuario(), loginRequest.getContrasenha());
 
         if (usuario != null) {
-            return ResponseEntity.ok("Login exitoso");
+            return ResponseEntity.ok(usuario);
+
+
+
         } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario o contraseña incorrectos");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
     }
 }
