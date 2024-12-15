@@ -14,9 +14,11 @@ import java.util.List;
 public class ReservaController {
 
     private final ReservaRepository reservaRepository;
+    private final UsuarioRepository usuarioRepository;
 
-    public ReservaController(ReservaRepository reservaRepository) {
+    public ReservaController(ReservaRepository reservaRepository,UsuarioRepository usuarioRepository) {
         this.reservaRepository = reservaRepository;
+        this.usuarioRepository=usuarioRepository;
     }
 
     // Obtener una reserva por su ID
@@ -32,9 +34,16 @@ public class ReservaController {
         return reservaRepository.findAll();
     }
 
-    // Crear una nueva reserva
     @PostMapping
     public Reserva createReserva(@RequestBody Reserva reserva) {
+        // Fetch the Usuario from the database using the ID from the request
+        if (reserva.getUsuario() != null && reserva.getUsuario().getIdUsuario() != null) {
+            Usuario usuario = usuarioRepository.findById(reserva.getUsuario().getIdUsuario())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            reserva.setUsuario(usuario); // Assign the fetched Usuario to the Reserva
+        }
+    
+        // Save the Reserva
         return reservaRepository.save(reserva);
     }
 

@@ -17,13 +17,13 @@ data class LoginRequest(
 // Interface para las APIs
 interface UsuarioApi {
     @POST("/auth/login")
-    fun login(@Body loginRequest: LoginRequest): Response<Usuario>
+    fun login(@Body loginRequest: LoginRequest): Call<ResponseBody>
 
     @GET("/usuarios") // Endpoint para obtener todos los usuarios
-    fun getAllUsuarios(): Response<List<Usuario>> // Obtener lista de usuarios
+    fun getAllUsuarios(): Call<List<Usuario>> // Obtener lista de usuarios
 
     @GET("/usuarios/{idUsuario}") // Endpoint para obtener un usuario específico
-    fun getUsuarioById(@Path("idUsuario") idUsuario: Int): Response<Usuario>
+    fun getUsuarioById(@Path("idUsuario") idUsuario: Int): Call<Usuario>
 }
 
 // Clase de datos de un usuario

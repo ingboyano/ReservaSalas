@@ -1,6 +1,9 @@
 package com.payroll.PayrollSrv.jpa;
 
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -21,5 +24,6 @@ public class Usuario {
 
     // Relación con las reservas
     @OneToMany(mappedBy = "usuario")
+    @JsonIgnore
     private List<Reserva> reservas;
 }
