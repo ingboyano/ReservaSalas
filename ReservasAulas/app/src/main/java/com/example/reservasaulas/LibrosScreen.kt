@@ -20,14 +20,21 @@ import okhttp3.Response
 
 @Composable
 fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
+    // Definición del color rojo personalizado
     val customRed = Color(0xFF791414) // Color rojo
+
+    // Contexto actual para mostrar Toasts
     val context = LocalContext.current // Contexto para Toast
+
+    // Variables de estado para los campos de entrada
     var titulo by remember { mutableStateOf("") }
     var autor by remember { mutableStateOf("") }
     var anho by remember { mutableStateOf(0) }
     var genero by remember { mutableStateOf("") }
     var isbn by remember { mutableStateOf("") }
     var portadaUrl by remember { mutableStateOf("") }
+
+    // Variables de estado para la validación de errores
     var errorTitulo by remember { mutableStateOf(false) }
     var errorAutor by remember { mutableStateOf(false) }
     var errorAnho by remember { mutableStateOf(false) }
@@ -44,6 +51,7 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        // Barra superior con el título y botón para navegar al menú principal
         TopAppBar(
             title = { Text("Gestión de Libros") },
             actions = {
@@ -59,7 +67,7 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Botones de navegación
+        // Botones de navegación: Listar y Eliminar Libros
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -85,6 +93,7 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Card para la entrada de datos del nuevo libro
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(8.dp)
@@ -97,7 +106,7 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
             ) {
                 Text("Registrar Nuevo Libro", style = MaterialTheme.typography.headlineSmall)
 
-                // Título
+                // Campo de Título
                 OutlinedTextField(
                     value = titulo,
                     onValueChange = {
@@ -116,7 +125,7 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
                     Text("El título no puede estar vacío", color = MaterialTheme.colorScheme.error)
                 }
 
-                // Autor
+                // Campo de Autor
                 OutlinedTextField(
                     value = autor,
                     onValueChange = {
@@ -135,7 +144,7 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
                     Text("El autor no puede estar vacío", color = MaterialTheme.colorScheme.error)
                 }
 
-                // Año
+                // Campo de Año
                 OutlinedTextField(
                     value = anho.toString(), // Convertimos el valor de anho a String
                     onValueChange = {
@@ -155,7 +164,7 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
                     Text("Debe ser un número positivo", color = MaterialTheme.colorScheme.error)
                 }
 
-                // Género
+                // Campo de Género con menú desplegable
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded }
@@ -187,7 +196,7 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
                     }
                 }
 
-                // ISBN
+                // Campo de ISBN con validación de longitud
                 OutlinedTextField(
                     value = isbn,
                     onValueChange = {
@@ -205,7 +214,7 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
                     Text("El ISBN debe tener 13 dígitos", color = MaterialTheme.colorScheme.error)
                 }
 
-                // URL de portada
+                // Campo de URL de portada con validación
                 OutlinedTextField(
                     value = portadaUrl,
                     onValueChange = {
@@ -225,7 +234,7 @@ fun LibrosScreen(navController: NavController, libros: MutableList<Libro>) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Botón Registrar
+                // Botón de Registro de Libro
                 Button(
                     onClick = {
                         val libroNuevo = Libro(titulo, autor, anho, genero, isbn, portadaUrl)
